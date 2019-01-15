@@ -79,7 +79,7 @@
 <p v-else-if="num==2">parrafo 2</p>
 <p v-else-if="num==3">parrafo 3</p>
 <!-- también se puede poner un v-else para cuando no es ninguna de las anteriores -->
-<p v-else>no es niuna wea de parrafo</p>
+<p v-else>no es ningún parrafo</p>
 ```
 
 ### v-show
