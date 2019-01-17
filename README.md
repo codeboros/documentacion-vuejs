@@ -103,6 +103,8 @@
 ```html
 <button v-on:click>ingresar</button>
 <input v-on:keyup.enter="enviar()"></input>
+<!-- manera rápida -->
+<input @keyup.enter="enviar()"></input>
 ```
 
 ### v-html
@@ -277,30 +279,37 @@ new Vue({
   data: {
     mensaje: 'Este es el mensaje'
   },
-  beforeCreate : function(){
+  beforeCreate(){
     console.log('Llamando beforeCreate');
   },
-  created : function(){
+  created(){
     console.log('Llamando created');
   },
-  beforeMount : function(){
+  beforeMount(){
     console.log('Llamando beforeMount');
   },
-  mounted : function(){
+  mounted(){
     console.log('Llamando mounted');
   },
-  beforeUpdate : function(){
+  beforeUpdate(){
     console.log('Llamando beforeUpdate');
   },
-  updated : function(){
+  updated(){
     console.log('Llamando updated');
   },
-  beforeDestroy : function(){
+  beforeDestroy(){
     console.log('Llamando beforeDestroy');
   },
-  destroyed : function(){
+  destroyed(){
     console.log('Llamando destroyed');
   },
+  activated(){
+  	console.log('componente activo');      
+  },
+  desactivated(){
+    console.log('componente inactivo');
+  }
+  
   methods : {
     destruir : function(){
       this.$destroy();
@@ -308,6 +317,101 @@ new Vue({
   }
   
 }) 
+```
+
+
+
+## Slots
+
+```vue
+<!-- componente hijo -->
+<template>
+	<slot></slot> <!-- slot por defecto -->
+</template>
+<!-- componente padre -->
+<template>
+	<nombre-componente>
+    	<h1>Hola mundo</h1> <!-- esta etiqueta se mostrará en el slot del componente hijo -->
+    </nombre-componente>
+</template>
+```
+
+```vue
+<!-- componente hijo -->
+<template>
+	<form class="form">
+        <slot name="elementos"></slot>
+        <slot name="boton"></slot>
+    </form>
+</template>
+
+<!-- componente padre -->
+<template>
+	<nombre-componente>
+    	<div slot="elementos">
+            <label>Correo electrónico</label>
+        	<input type="email">    
+    	</div>
+        <div slot="boton">
+        	<button>Ingresar</button>    
+    	</div>
+    </nombre-componente>
+</template>
+```
+
+
+
+## Componentes dinámicos
+
+```vue
+<!-- componente padre -->
+<template>
+	<button @click="componenteSeleccionado = 'formLogin'">Iniciar Sesión</button>
+	<button @click="componenteSeleccionado = 'formregister'">Registrar cuenta</button>
+	<component v-bind:is="componenteSeleccionado"></component>
+</template>
+
+<script>
+import FormLogin from './components/FormLogin.vue'
+import FormRegister from './components/FormRegister.vue'
+    export default{
+        components: {
+            formLogin: FormLogin,
+            formRegister: FormRegister
+        },
+        data(){
+            return{
+                componenteSeleccionado: 'formLogin'
+            }
+        }
+    }
+</script>
+```
+
+### Evitar la destrucción del componente
+
+```vue
+<!-- componente padre -->
+<template>
+	<button @click="componenteSeleccionado = 'formLogin'">Iniciar Sesión</button>
+	<button @click="componenteSeleccionado = 'formregister'">Registrar cuenta</button>
+	<keep-alive> <!-- no se destruye el componente -->
+	    <component v-bind:is="componenteSeleccionado"></component>
+    </keep-alive>
+</template>
+
+<!-- componente hijo -->
+<script>
+    export default{
+        // estos hooks puede ser muy utiles para componentes dinámicos
+        activated(){
+            console.log('componente activo');
+        },
+        desactivated(){
+            console.log('componente desactivado');
+        }
+    }
+</script>
 ```
 
 
@@ -321,7 +425,16 @@ import App from './App.vue'
 
 Vue.config.productionTip = false
 
-export const bus = new Vue(); // se exporta el bus
+export const bus = new Vue({
+    data:{
+        // data en este caso queda como objeto, se pueden guardar variable globales
+    },
+    methods: {
+        actualizarContador(numTareas){
+            this.$emit('actualizarContador', numTareas)
+        }
+    }
+}); // se exporta el bus
 
 new Vue({
   render: h => h(App),
@@ -335,7 +448,7 @@ import { bus } from './main.js'
     export default{
         methods: {
             miFuncion(){
-                bus.$emit('actualizarContador', this.miVar.length)
+                bus.actualizarContador(this.tareas.lenght)
             }
         }
     }
@@ -395,6 +508,122 @@ const app = new Vue({
 ```
 
 
+
+## Forms
+
+### Agrupación de datos
+
+```vue
+<!-- puede ser de gran utilidad en los forms para enviar solo un objeto con todos las propiedades que sean necesarias -->
+<script>
+    export default {
+        data(){
+            return{
+                user: {
+                    name: '',
+                    email: '',
+                    phone: ''
+                }
+            }
+        }
+    }
+</script>
+```
+
+### Modificadores útiles para forms
+
+```vue
+<template>
+	<!-- trim para eliminar los espacios en el texto -->
+	<input type="text" v-model.trim>
+
+	<!-- number para que el numero ingresado sea typeof number -->
+	<input type="text" v-model.number>
+
+	<!-- lazy para que el v-model haga su trabajo una vez que el focus sale del input -->
+	<input type="text" v-model.lazy>
+</template>
+```
+
+### Dropdown list
+
+```vue
+<template>
+	<select v-model="pais">
+        <option v-for="pais in paises">{{ pais }}</option>
+    </select>
+</template>
+
+<script>
+    export default{
+        data(){
+            return{
+                paises: ['Chile', 'Peru', 'Argentina']
+            }
+        }
+    }
+</script>
+```
+
+### Radio buttons
+
+```vue
+<template>
+	<label>
+    	<input type="radio" name="optionRadios" value="hombre" v-model="usuario.genero">
+    </label>
+	<label>
+    	<input type="radio" name="optionRadios" value="mujer" v-model="usuario.genero">
+    </label>
+</template>
+```
+
+### Checkbox
+
+```vue
+<template>
+	<label>
+    	<input type="checkbox" value="acepto" v-model="usuario.condiciones">
+        Acepto condiciones
+    </label>
+	<label>
+    	<input type="checkbox" value="acepto" v-model="usuario.condiciones">
+        Recibir newsletter
+    </label>
+</template>
+
+<script>
+    export default{
+        data(){
+            return{
+                usuario: {
+                    condiciones: [] // se usa un array para mantener un orden en caso de tener mas de un checkbox, de lo contrario basta con una propiedad normal
+                }
+            }
+        }
+    }
+</script>
+```
+
+
+
+## Filtros (pipe en angular)
+
+```vue
+<!-- componente  -->
+<template>
+	<span>{{ mensaje | mayuscula }}</span>
+</template>
+```
+
+```vue
+<!-- dentro del main.js --> 
+Vue.filter('mayuscula', (texto) => {
+	return texto.toUpperCase()
+})
+```
+
+:bulb: **Tip:** vue js no viene con filtros por defecto
 
 ## vue cli
 
